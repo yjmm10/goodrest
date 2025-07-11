@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background: transparent;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .filter-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 9999;
+            mix-blend-mode: multiply;
+        }
+
+        .wallpaper-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 10000;
+        }
+
+        .break-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 24px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 10001;
+            backdrop-filter: blur(10px);
+        }
+
+        .break-timer {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="filter-overlay" id="filterOverlay"></div>
+    <div class="wallpaper-overlay" id="wallpaperOverlay"></div>
+    <div class="break-message" id="breakMessage">
+        <div>Time for a break!</div>
+        <div class="break-timer" id="breakTimer">05:00</div>
+        <div>Look away from the screen and rest your eyes</div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        const filterOverlay = document.getElementById('filterOverlay');
+        const wallpaperOverlay = document.getElementById('wallpaperOverlay');
+        const breakMessage = document.getElementById('breakMessage');
+        const breakTimer = document.getElementById('breakTimer');
+
+        function temperatureToRGB(temp) {
+            temp = temp / 100;
+            
+            let red, green, blue;
+            
+            if (temp <= 66) {
+                red = 255;
+                green = temp;
+                green = 99.4708025861 * Math.log(green) - 161.1195681661;
+                
+                if (temp >= 19) {
+                    blue = temp - 10;
+                    blue = 138.5177312231 * Math.log(blue) - 305.0447927307;
+                } else {
+                    blue = 0;
+                }
+            } else {
+                red = temp - 60;
+                red = 329.698727446 * Math.pow(red, -0.1332047592);
+                
+                green = temp - 60;
+                green = 288.1221695283 * Math.pow(green, -0.0755148492);
+                
+                blue = 255;
+            }
+            
+            return {
+                r: Math.max(0, Math.min(255, red)),
+                g: Math.max(0, Math.min(255, green)),
+                b: Math.max(0, Math.min(255, blue))
+            };
+        }
+
+        function applyFilter(settings) {
+            if (!settings.enabled) {
+                filterOverlay.style.background = 'transparent';
+                return;
+            }
+
+            const rgb = temperatureToRGB(settings.temperature);
+            const opacity = 1 - settings.brightness;
+            
+            filterOverlay.style.background = `rgba(${255 - rgb.r}, ${255 - rgb.g}, ${255 - rgb.b}, ${opacity * 0.3})`;
+        }
+
+        function showBreakScreen(duration) {
+            wallpaperOverlay.style.backgroundImage = 'url("../assets/wallpapers/break-1.jpg")';
+            wallpaperOverlay.style.opacity = '1';
+            breakMessage.style.opacity = '1';
+            
+            let timeLeft = duration;
+            const timer = setInterval(() => {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                breakTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                timeLeft--;
+                
+                if (timeLeft < 0) {
+                    clearInterval(timer);
+                    hideBreakScreen();
+                }
+            }, 1000);
+        }
+
+        function hideBreakScreen() {
+            wallpaperOverlay.style.opacity = '0';
+            breakMessage.style.opacity = '0';
+        }
+
+        ipcRenderer.on('update-filter', (event, settings) => {
+            applyFilter(settings);
+        });
+
+        ipcRenderer.on('show-break', (event, duration) => {
+            showBreakScreen(duration);
+        });
+
+        ipcRenderer.on('hide-break', () => {
+            hideBreakScreen();
+        });
+    </script>
+</body>
+</html>

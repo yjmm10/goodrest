@@ -1,0 +1,76 @@
+{
+  "name": "goodrest",
+  "version": "1.0.0",
+  "description": "Cross-platform eye protection software with blue light filter and pomodoro timer",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --publish=never",
+    "test": "jest"
+  },
+  "keywords": [
+    "eye-protection",
+    "blue-light-filter",
+    "pomodoro",
+    "brightness-control",
+    "cross-platform"
+  ],
+  "author": "GoodRest Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.0.0",
+    "jest": "^29.0.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "node-schedule": "^2.1.1"
+  },
+  "build": {
+    "appId": "com.goodrest.eyeprotection",
+    "productName": "GoodRest",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.healthcare-fitness",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ]
+    }
+  }
+}
